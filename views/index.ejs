@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Discord Bot Control Panel</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body class="bg-gray-900 text-white">
+    <div class="min-h-screen">
+        <!-- Navigation -->
+        <nav class="bg-gray-800 border-b border-gray-700">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex items-center justify-between h-16">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0">
+                            <h1 class="text-xl font-bold">Discord Bot Control</h1>
+                        </div>
+                        <div class="hidden md:block">
+                            <div class="ml-10 flex items-baseline space-x-4">
+                                <a href="/" class="bg-gray-900 text-white px-3 py-2 rounded-md text-sm font-medium">Dashboard</a>
+                                <a href="/servers" class="text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium">Servers</a>
+                                <a href="/messages" class="text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium">Messages</a>
+                                <a href="/settings" class="text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium">Settings</a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex items-center">
+                        <div class="text-gray-300 flex items-center">
+                            <% if (typeof bot !== 'undefined' && bot && bot.avatar) { %>
+                                <img src="https://cdn.discordapp.com/avatars/<%= bot.id %>/<%= bot.avatar %>.png" alt="Bot Avatar" class="w-8 h-8 rounded-full mr-2">
+                            <% } %>
+                            <span class="text-sm font-medium"><%= typeof bot !== 'undefined' && bot ? bot.tag : 'Bot Offline' %></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+            <!-- Dashboard Overview -->
+            <div class="px-4 py-6 sm:px-0">
+                <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                    <!-- Server Stats Card -->
+                    <div class="bg-gray-800 overflow-hidden shadow rounded-lg">
+                        <div class="px-4 py-5 sm:p-6">
+                            <dt class="text-sm font-medium text-gray-400 truncate">
+                                Total Servers
+                            </dt>
+                            <dd class="mt-1 text-3xl font-semibold text-white" id="serverCount">
+                                Loading...
+                            </dd>
+                        </div>
+                    </div>
+
+                    <!-- Members Stats Card -->
+                    <div class="bg-gray-800 overflow-hidden shadow rounded-lg">
+                        <div class="px-4 py-5 sm:p-6">
+                            <dt class="text-sm font-medium text-gray-400 truncate">
+                                Total Members
+                            </dt>
+                            <dd class="mt-1 text-3xl font-semibold text-white" id="memberCount">
+                                Loading...
+                            </dd>
+                        </div>
+                    </div>
+
+                    <!-- Status Card -->
+                    <div class="bg-gray-800 overflow-hidden shadow rounded-lg">
+                        <div class="px-4 py-5 sm:p-6">
+                            <dt class="text-sm font-medium text-gray-400 truncate">
+                                Bot Status
+                            </dt>
+                            <dd class="mt-1 text-3xl font-semibold text-green-500" id="botStatus">
+                                Online
+                            </dd>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Activity Settings -->
+                <div class="mt-8">
+                    <div class="bg-gray-800 shadow rounded-lg">
+                        <div class="px-4 py-5 sm:p-6">
+                            <h3 class="text-lg leading-6 font-medium text-white">
+                                Bot Activity
+                            </h3>
+                            <div class="mt-5">
+                                <div class="flex space-x-4">
+                                    <select id="activityType" class="bg-gray-700 text-white rounded-md px-3 py-2">
+                                        <option value="PLAYING">Playing</option>
+                                        <option value="LISTENING">Listening to</option>
+                                        <option value="WATCHING">Watching</option>
+                                        <option value="COMPETING">Competing in</option>
+                                    </select>
+                                    <input type="text" id="activityText" placeholder="Activity text" 
+                                        class="flex-1 bg-gray-700 text-white rounded-md px-3 py-2">
+                                    <button onclick="updateActivity()" 
+                                            class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md">
+                                        Update
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+
+        // Update activity function
+        function updateActivity() {
+            const type = document.getElementById('activityType').value;
+            const text = document.getElementById('activityText').value;
+            socket.emit('update-activity', { type, text });
+        }
+
+        // Socket events
+        socket.on('stats-update', (stats) => {
+            document.getElementById('serverCount').textContent = stats.servers;
+            document.getElementById('memberCount').textContent = stats.members;
+        });
+
+        socket.on('status-update', (status) => {
+            const statusElement = document.getElementById('botStatus');
+            statusElement.textContent = status;
+            statusElement.className = status === 'Online' 
+                ? 'mt-1 text-3xl font-semibold text-green-500'
+                : 'mt-1 text-3xl font-semibold text-red-500';
+        });
+    </script>
+</body>
+</html>

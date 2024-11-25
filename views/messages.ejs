@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Messages - Discord Bot Control Panel</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body class="bg-gray-900 text-white">
+    <div class="min-h-screen">
+        <!-- Navigation -->
+        <nav class="bg-gray-800 border-b border-gray-700">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex items-center justify-between h-16">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0">
+                            <h1 class="text-xl font-bold">Discord Bot Control</h1>
+                        </div>
+                        <div class="hidden md:block">
+                            <div class="ml-10 flex items-baseline space-x-4">
+                                <a href="/" class="text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium">Dashboard</a>
+                                <a href="/servers" class="text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium">Servers</a>
+                                <a href="/messages" class="bg-gray-900 text-white px-3 py-2 rounded-md text-sm font-medium">Messages</a>
+                                <a href="/settings" class="text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium">Settings</a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex items-center">
+                        <div class="text-gray-300 flex items-center">
+                            <% if (bot.avatar) { %>
+                                <img src="https://cdn.discordapp.com/avatars/<%= bot.id %>/<%= bot.avatar %>.png" alt="Bot Avatar" class="w-8 h-8 rounded-full mr-2">
+                            <% } %>
+                            <span class="text-sm font-medium"><%= bot.tag %></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+            <div class="px-4 py-6 sm:px-0 flex h-[calc(100vh-10rem)]">
+                <!-- Tabs -->
+                <div class="w-64 bg-gray-800 rounded-lg mr-4 flex flex-col">
+                    <div class="p-4 border-b border-gray-700">
+                        <div class="flex space-x-2">
+                            <button onclick="switchTab('servers')" id="serversTab" 
+                                class="flex-1 py-2 px-4 rounded bg-gray-900 text-white">
+                                Servers
+                            </button>
+                            <button onclick="switchTab('dms')" id="dmsTab"
+                                class="flex-1 py-2 px-4 rounded hover:bg-gray-700 text-gray-400">
+                                DMs
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Server List -->
+                    <div id="serversList" class="flex-1 overflow-y-auto">
+                        <div class="p-4 space-y-2">
+                            <button onclick="showGuildModal()"
+                                class="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md">
+                                Enter IDs
+                            </button>
+                            <button onclick="saveAllMessages()"
+                                class="w-full bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md">
+                                Save Messages
+                            </button>
+                            <div id="currentChannelInfo" class="text-gray-300 mt-2 hidden">
+                                <!-- Current channel info will be shown here -->
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- DMs List (initially hidden) -->
+                    <div id="dmsList" class="hidden flex-1 overflow-y-auto">
+                        <div class="p-4 space-y-2">
+                            <button onclick="showNewDmModal()"
+                                class="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md">
+                                Start Private Message
+                            </button>
+                            <button onclick="saveAllMessages()"
+                                class="w-full bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md">
+                                Save Messages
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- New DM Modal -->
+                    <div id="newDmModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+                        <div class="bg-gray-800 p-6 rounded-lg w-96">
+                            <h3 class="text-lg font-medium text-white mb-4">Message User</h3>
+                            <input type="text" id="newDmUserId" placeholder="Enter User ID" 
+                                class="w-full bg-gray-700 text-white rounded-md px-3 py-2 mb-4">
+                            <div class="flex justify-end space-x-2">
+                                <button onclick="closeNewDmModal()"
+                                    class="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-md">
+                                    Cancel
+                                </button>
+                                <button onclick="startPrivateMessage()"
+                                    class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md">
+                                    Start Chat
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ID Input Modal -->
+                    <div id="guildModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+                        <div class="bg-gray-800 p-6 rounded-lg w-96">
+                            <h3 class="text-lg font-medium text-white mb-4">Enter IDs</h3>
+                            <div class="space-y-4">
+                                <div>
+                                    <label for="guildId" class="block text-sm font-medium text-gray-300 mb-1">Server ID</label>
+                                    <input type="text" id="guildId" placeholder="Enter Server ID" 
+                                        class="w-full bg-gray-700 text-white rounded-md px-3 py-2">
+                                </div>
+                                <div>
+                                    <label for="channelId" class="block text-sm font-medium text-gray-300 mb-1">Channel ID</label>
+                                    <input type="text" id="channelId" placeholder="Enter Channel ID" 
+                                        class="w-full bg-gray-700 text-white rounded-md px-3 py-2">
+                                </div>
+                            </div>
+                            <div class="flex justify-end space-x-2 mt-6">
+                                <button onclick="closeGuildModal()"
+                                    class="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-md">
+                                    Cancel
+                                </button>
+                                <button onclick="loadChannel()"
+                                    class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md">
+                                    Load Channel
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Channel Selection Modal -->
+                    <div id="channelModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+                        <div class="bg-gray-800 p-6 rounded-lg w-[800px] max-h-[80vh] flex flex-col">
+                            <h3 class="text-lg font-medium text-white mb-4">Select Channel</h3>
+                            <div id="channelCategories" class="flex-1 overflow-y-auto">
+                                <!-- Categories and channels will be loaded here -->
+                            </div>
+                            <div class="flex justify-end space-x-2 mt-4 pt-4 border-t border-gray-700">
+                                <button onclick="closeChannelModal()"
+                                    class="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-md">
+                                    Cancel
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Messages Area -->
+                <div class="flex-1 bg-gray-800 rounded-lg flex flex-col">
+                    <div class="p-4 border-b border-gray-700">
+                        <div class="flex space-x-2">
+                            <input type="text" id="messageInput" placeholder="Type a message..."
+                                class="flex-1 bg-gray-700 text-white rounded-md px-3 py-2">
+                            <button onclick="sendMessage()"
+                                class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md">
+                                Send
+                            </button>
+                        </div>
+                    </div>
+                    <div id="messageArea" class="flex-1 p-4 overflow-y-auto flex flex-col-reverse space-y-reverse space-y-4">
+                        <!-- Messages will be populated here -->
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+        let currentChannel = null;
+        let currentServer = null;
+        let currentTab = 'servers';
+        let messageRefreshInterval = null;
+
+        // Modal Functions
+        function showNewDmModal() {
+            document.getElementById('newDmModal').classList.remove('hidden');
+        }
+
+        function closeNewDmModal() {
+            document.getElementById('newDmModal').classList.add('hidden');
+            document.getElementById('newDmUserId').value = '';
+        }
+
+        function startPrivateMessage() {
+            const userId = document.getElementById('newDmUserId').value.trim();
+            if (userId) {
+                selectDM(userId);
+                closeNewDmModal();
+            } else {
+                alert('Please enter a User ID');
+            }
+        }
+
+        function showGuildModal() {
+            document.getElementById('guildModal').classList.remove('hidden');
+            document.getElementById('guildId').value = '';
+            document.getElementById('channelId').value = '';
+            document.getElementById('guildId').focus();
+        }
+
+        function closeGuildModal() {
+            document.getElementById('guildModal').classList.add('hidden');
+        }
+
+        function closeChannelModal() {
+            document.getElementById('channelModal').classList.add('hidden');
+        }
+
+        function switchTab(tab) {
+            currentTab = tab;
+            currentChannel = null;
+            document.getElementById('messageArea').innerHTML = '';
+            
+            // Clear existing refresh interval
+            if (messageRefreshInterval) {
+                clearInterval(messageRefreshInterval);
+                messageRefreshInterval = null;
+            }
+            
+            const serversList = document.getElementById('serversList');
+            const dmsList = document.getElementById('dmsList');
+            const serversTab = document.getElementById('serversTab');
+            const dmsTab = document.getElementById('dmsTab');
+
+            if (tab === 'servers') {
+                serversList.classList.remove('hidden');
+                dmsList.classList.add('hidden');
+                serversTab.classList.add('bg-gray-900', 'text-white');
+                serversTab.classList.remove('hover:bg-gray-700', 'text-gray-400');
+                dmsTab.classList.remove('bg-gray-900', 'text-white');
+                dmsTab.classList.add('hover:bg-gray-700', 'text-gray-400');
+            } else {
+                serversList.classList.add('hidden');
+                dmsList.classList.remove('hidden');
+                dmsTab.classList.add('bg-gray-900', 'text-white');
+                dmsTab.classList.remove('hover:bg-gray-700', 'text-gray-400');
+                serversTab.classList.remove('bg-gray-900', 'text-white');
+                serversTab.classList.add('hover:bg-gray-700', 'text-gray-400');
+            }
+        }
+
+        function startMessageRefresh() {
+            // Clear existing interval
+            if (messageRefreshInterval) {
+                clearInterval(messageRefreshInterval);
+            }
+            
+            // Initial refresh
+            refreshMessages();
+            
+            // Set up new interval
+            messageRefreshInterval = setInterval(refreshMessages, 500);
+        }
+
+        function refreshMessages() {
+            if (currentChannel) {
+                if (currentTab === 'servers') {
+                    socket.emit('get-messages', { channelId: currentChannel });
+                } else {
+                    socket.emit('get-dm-messages', { userId: currentChannel });
+                }
+            }
+        }
+
+        function selectChannel(channelId) {
+            currentChannel = channelId;
+            document.getElementById('messageArea').innerHTML = '';
+            startMessageRefresh();
+        }
+
+        function selectDM(userId) {
+            currentChannel = userId;
+            document.getElementById('messageArea').innerHTML = '';
+            startMessageRefresh();
+        }
+
+        function selectGuildChannel(channelId, channelName) {
+            currentChannel = channelId;
+            document.getElementById('messageArea').innerHTML = '';
+            closeChannelModal();
+            
+            // Show current channel info
+            const infoDiv = document.getElementById('currentChannelInfo');
+            infoDiv.innerHTML = `Currently viewing: <span class="font-medium">#${channelName}</span>`;
+            infoDiv.classList.remove('hidden');
+            
+            startMessageRefresh();
+        }
+
+        // Server list and channels
+        function loadChannel() {
+            const guildId = document.getElementById('guildId').value.trim();
+            const channelId = document.getElementById('channelId').value.trim();
+
+            if (!guildId || !channelId) {
+                alert('Please enter both Server ID and Channel ID');
+                return;
+            }
+
+            currentServer = guildId;
+            currentChannel = channelId;
+
+            // Update channel info display
+            const infoDiv = document.getElementById('currentChannelInfo');
+            infoDiv.innerHTML = `Server ID: <span class="font-medium">${guildId}</span><br>
+                               Channel ID: <span class="font-medium">${channelId}</span>`;
+            infoDiv.classList.remove('hidden');
+
+            // Clear message area
+            document.getElementById('messageArea').innerHTML = '';
+
+            // Start loading messages
+            startMessageRefresh();
+            closeGuildModal();
+        }
+
+        function loadGuildChannels() {
+            const guildId = document.getElementById('guildId').value.trim();
+            if (guildId) {
+                currentServer = guildId;
+                socket.emit('get-guild-channels', { guildId });
+                closeGuildModal();
+                document.getElementById('channelModal').classList.remove('hidden');
+            } else {
+                alert('Please enter a Server ID');
+            }
+        }
+
+        socket.on('guild-channels', (data) => {
+            const categoriesContainer = document.getElementById('channelCategories');
+            if (!data.success) {
+                categoriesContainer.innerHTML = `<div class="text-red-500 p-4">${data.error}</div>`;
+                return;
+            }
+
+            const { categories, channels } = data;
+            console.log('Received categories:', categories);
+            console.log('Received channels:', channels);
+            
+            // Group channels by category
+            const channelsByCategory = {};
+            channels.forEach(channel => {
+                const categoryId = channel.parentId || 'uncategorized';
+                if (!channelsByCategory[categoryId]) {
+                    channelsByCategory[categoryId] = [];
+                }
+                channelsByCategory[categoryId].push(channel);
+            });
+
+            let html = '';
+
+            // Generate HTML for categories and their channels
+            categories.forEach(category => {
+                const categoryChannels = channelsByCategory[category.id] || [];
+                if (categoryChannels.length > 0) {
+                    html += `
+                        <div class="category-container mb-4">
+                            <div class="category-header cursor-pointer hover:bg-gray-700 p-2 rounded flex items-center justify-between"
+                                 onclick="toggleCategory('${category.id}')">
+                                <span class="text-white font-medium">${category.name}</span>
+                                <span class="text-gray-400 transform transition-transform duration-200" id="arrow-${category.id}">▶</span>
+                            </div>
+                            <div id="category-${category.id}" class="hidden ml-4 mt-2 space-y-1">
+                                ${categoryChannels.map(channel => `
+                                    <div class="channel-item cursor-pointer hover:bg-gray-700 p-2 rounded text-gray-300"
+                                         onclick="selectGuildChannel('${channel.id}', '${channel.name}')">
+                                        # ${channel.name}
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    `;
+                }
+            });
+
+            // Add uncategorized channels
+            const uncategorizedChannels = channelsByCategory.uncategorized || [];
+            if (uncategorizedChannels.length > 0) {
+                html += `
+                    <div class="category-container mb-4">
+                        <div class="category-header cursor-pointer hover:bg-gray-700 p-2 rounded flex items-center justify-between"
+                             onclick="toggleCategory('uncategorized')">
+                            <span class="text-white font-medium">General</span>
+                            <span class="text-gray-400 transform transition-transform duration-200" id="arrow-uncategorized">▶</span>
+                        </div>
+                        <div id="category-uncategorized" class="hidden ml-4 mt-2 space-y-1">
+                            ${uncategorizedChannels.map(channel => `
+                                <div class="channel-item cursor-pointer hover:bg-gray-700 p-2 rounded text-gray-300"
+                                     onclick="selectGuildChannel('${channel.id}', '${channel.name}')">
+                                    # ${channel.name}
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            }
+
+            // If no channels were found
+            if (html === '') {
+                html = '<div class="text-gray-400 p-4">No text channels found in this server.</div>';
+            }
+
+            categoriesContainer.innerHTML = html;
+        });
+
+        function toggleCategory(categoryId) {
+            const container = document.getElementById(`category-${categoryId}`);
+            const arrow = document.getElementById(`arrow-${categoryId}`);
+            
+            if (container.classList.contains('hidden')) {
+                container.classList.remove('hidden');
+                arrow.style.transform = 'rotate(90deg)';
+            } else {
+                container.classList.add('hidden');
+                arrow.style.transform = 'rotate(0deg)';
+            }
+        }
+
+        function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const message = input.value.trim();
+            
+            if (currentChannel && message) {
+                if (currentTab === 'servers') {
+                    socket.emit('send-message', {
+                        channelId: currentChannel,
+                        message: message
+                    });
+                } else {
+                    socket.emit('send-dm', {
+                        userId: currentChannel,
+                        message: message
+                    });
+                }
+                input.value = '';
+            }
+        }
+
+        // Message display
+        socket.on('message-list', (messages) => {
+            const messageArea = document.getElementById('messageArea');
+            messageArea.innerHTML = messages.reverse().map(msg => `
+                <div class="message-item bg-gray-700 p-3 rounded mb-2">
+                    <div class="flex justify-between">
+                        <span class="font-semibold text-white">${msg.author}</span>
+                        <span class="text-gray-400 text-sm">${new Date(msg.timestamp).toLocaleString()}</span>
+                    </div>
+                    <div class="mt-1 text-gray-200">${msg.content}</div>
+                </div>
+            `).join('');
+            messageArea.scrollTop = messageArea.scrollHeight;
+        });
+
+        // Initialize with servers tab
+        switchTab('servers');
+
+        // Handle enter key for message input
+        document.getElementById('messageInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+
+        // Cleanup interval when leaving page
+        window.addEventListener('beforeunload', () => {
+            if (messageRefreshInterval) {
+                clearInterval(messageRefreshInterval);
+            }
+        });
+
+        // Add these new functions for saving messages
+        async function saveAllMessages() {
+            if (!currentChannel) return;
+            
+            try {
+                let messages = [];
+                let name = '';
+                
+                if (currentTab === 'servers') {
+                    const channel = await fetchAllChannelMessages(currentChannel);
+                    messages = channel.messages;
+                    name = channel.name;
+                } else {
+                    const dm = await fetchAllDMMessages(currentChannel);
+                    messages = dm.messages;
+                    name = dm.name;
+                }
+
+                // Format messages
+                const formattedMessages = messages.map(msg => 
+                    `[${new Date(msg.timestamp).toLocaleString()}] ${msg.author}: ${msg.content}`
+                ).join('\n');
+
+                // Create file content
+                const header = `Messages from ${currentTab === 'servers' ? 'Channel' : 'DM'}: ${name}\nExported on: ${new Date().toLocaleString()}\n\n`;
+                const content = header + formattedMessages;
+
+                // Download file
+                downloadTextFile(content, `messages-${currentTab}-${name}-${new Date().toISOString().split('T')[0]}.txt`);
+            } catch (error) {
+                console.error('Error saving messages:', error);
+                alert('Error saving messages. Please try again.');
+            }
+        }
+
+        async function fetchAllChannelMessages(channelId) {
+            return new Promise((resolve, reject) => {
+                socket.emit('get-all-channel-messages', { channelId });
+                socket.once('all-channel-messages', resolve);
+                socket.once('error', reject);
+            });
+        }
+
+        async function fetchAllDMMessages(userId) {
+            return new Promise((resolve, reject) => {
+                socket.emit('get-all-dm-messages', { userId });
+                socket.once('all-dm-messages', resolve);
+                socket.once('error', reject);
+            });
+        }
+
+        function downloadTextFile(content, filename) {
+            const blob = new Blob([content], { type: 'text/plain' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+        }
+
+        // Add event listeners for Enter key
+        document.getElementById('guildId').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                document.getElementById('channelId').focus();
+            }
+        });
+
+        document.getElementById('channelId').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                loadChannel();
+            }
+        });
+    </script>
+</body>
+</html>
