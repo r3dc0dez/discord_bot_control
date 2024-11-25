@@ -1,5 +1,14 @@
 # Discord Bot Control
 
+<div align="center">
+  
+  ![GitHub repo size](https://img.shields.io/github/repo-size/r3dc0dez/youtubev2)
+  ![GitHub stars](https://img.shields.io/github/stars/r3dc0dez/youtubev2?style=social)
+  ![GitHub forks](https://img.shields.io/github/forks/r3dc0dez/youtubev2?style=social)
+
+</div>
+
+
 A Discord bot control system that allows for managing and interacting with Discord bots.
 
 Created by [r3dc0dez](https://github.com/r3dc0dez)
@@ -9,6 +18,10 @@ Created by [r3dc0dez](https://github.com/r3dc0dez)
 - Bot management and control
 - Command handling
 - Easy-to-use interface
+
+### Demo Screeshots
+
+![Discord Demo](views/git-preview.png "Desktop Demo")
 
 ## Prerequisites
 
